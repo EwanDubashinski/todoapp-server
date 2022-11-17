@@ -4,21 +4,15 @@ import com.mongodb.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.UpdateResult;
 import com.mongodb.starter.models.Item;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.*;
@@ -126,5 +120,119 @@ public class MongoDBItemRepository implements ItemRepository {
     public void delete(Item item) {
         Bson query = eq("id", item.getId());
         itemCollection.deleteOne(query);
+    }
+
+    @Override
+    public void setChildOrder(Item item, Integer childOrder) {
+//        Bson oldQuery = and(
+//                eq("child_order", childOrder),
+//                eq("project_id", item.getProjectId()),
+//                eq("parent_id", item.getParentId())
+//        );
+//
+//        Item oldItem = itemCollection.find(oldQuery).first();
+//        if (oldItem == null) return;
+//
+//        Integer oldOrder = item.getChildOrder();
+//
+//        Bson updateNew = Updates.set("child_order", childOrder);
+//        Bson updateOld = Updates.set("child_order", oldOrder);
+//
+//        oldQuery = eq("id", oldItem.getId());
+//        Bson query = eq("id", item.getId());
+//
+//        itemCollection.findOneAndUpdate(query, updateNew);
+//        itemCollection.findOneAndUpdate(oldQuery, updateOld);
+
+        Bson listQuery = and(
+                eq("project_id", item.getProjectId()),
+                eq("parent_id", item.getParentId())
+        );
+        LinkedList<Item> items = itemCollection
+                .find(listQuery)
+                .sort(new BasicDBObject("child_order", 1))
+                .into(new LinkedList<>());
+
+        Item movingItem = items
+                .stream()
+                .filter(i -> Objects.equals(i.getId(), item.getId()))
+                .findFirst()
+                .orElse(null);
+//        Item movingItem = items.remove((int)item.getChildOrder());
+//        items.add(childOrder, item);
+        int movingItemIndex = items.indexOf(movingItem);
+        if (childOrder != movingItemIndex) {
+            items.remove(movingItemIndex);
+            items.add(childOrder, movingItem);
+        }
+
+        for (int i = 0; i < items.size(); i++) {
+            Item listItem = items.get(i);
+            if (listItem.getChildOrder() != i) {
+                Bson query = eq("id", listItem.getId());
+                Bson update = Updates.set("child_order", i);
+                itemCollection.findOneAndUpdate(query, update);
+            }
+        }
+    }
+
+    @Override
+    public void resetOrder(Long projectId) {
+        List<Item> items = findByProjectID(projectId);
+
+        Map<Long, List<Item>> itemsByParentId = new HashMap<>();
+
+        for (Item item : items) {
+            itemsByParentId.computeIfAbsent(item.getParentId(), k -> new ArrayList<>()).add(item);
+        }
+
+        itemsByParentId.forEach((parentId, itemsGroup) -> {
+            itemsGroup.sort(Comparator.comparing(Item::getChildOrder));
+            for (int i = 0; i < itemsGroup.size(); i++) {
+                Item item = itemsGroup.get(i);
+                Bson query = eq("id", item.getId());
+                Bson update = Updates.set("child_order", i);
+                itemCollection.findOneAndUpdate(query, update);
+            }
+        });
+    }
+
+    @Override
+    public Item getItemAbove(Item item) {
+        Bson itemAboveQuery = and(
+                eq("child_order", item.getChildOrder() - 1),
+                eq("project_id", item.getProjectId()),
+                eq("parent_id", item.getParentId())
+        );
+        return itemCollection.find(itemAboveQuery).first();
+    }
+
+    @Override
+    public Item setParent(Item item, Item parent) {
+        Bson query = eq("id", item.getId());
+        Long parentId = null;
+        if (parent != null) parentId = parent.getId();
+        Bson update = Updates.set("parent_id", parentId);
+        itemCollection.findOneAndUpdate(query, update);
+        return itemCollection.find(query).first();
+    }
+
+    @Override
+    public Item getParent(Item item) {
+        Item parent = null;
+        if (item.getParentId() != null) {
+            parent = itemCollection.find(eq("id", item.getParentId())).first();
+        }
+        return parent;
+    }
+
+    @Override
+    public Integer getNextChildOrder(Long projectId, Long parentId) {
+        Bson query = and(
+                eq("parent_id", parentId),
+                eq("project_id", projectId)
+        );
+        List<Item> items = itemCollection.find(query).into(new ArrayList<>()); // TODO: for debug reasons only
+        return (int)itemCollection.countDocuments(query);
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -39,7 +40,10 @@ public class ItemController {
 
     @GetMapping("items/{projectId}")
     public List<Item> getItemsByProjectId(@PathVariable Long projectId) {
-        return itemRepository.findByProjectID(projectId);
+        itemRepository.resetOrder(projectId);
+        List<Item> items = itemRepository.findByProjectID(projectId);
+        items.sort(Comparator.comparing(Item::getChildOrder));
+        return items;
     }
 
     @PostMapping("item/done")
@@ -66,6 +70,35 @@ public class ItemController {
     @PostMapping(value = "item/delete")
     public void delete(@RequestBody Item item) {
         itemRepository.delete(item);
+    }
+    @PostMapping(value = "item/up")
+    public void up(@RequestBody Item item) {
+        itemRepository.setChildOrder(item, item.getChildOrder() - 1);
+    }
+    @PostMapping(value = "item/down")
+    public void down(@RequestBody Item item) {
+        itemRepository.setChildOrder(item, item.getChildOrder() + 1);
+    }
+    @PostMapping(value = "item/right")
+    public void right(@RequestBody Item item) {
+        Item itemAbove = itemRepository.getItemAbove(item);
+        if (itemAbove != null) {
+            Integer order = itemRepository.getNextChildOrder(item.getProjectId(), itemAbove.getId());
+            item = itemRepository.setParent(item, itemAbove);
+            itemRepository.setChildOrder(item, order);
+        };
+    }
+    @PostMapping(value = "item/left")
+    public void left(@RequestBody Item item) {
+        if (item.getParentId() == null) return;
+
+        Item parent = itemRepository.getParent(item);
+        Item grandParent = itemRepository.getParent(parent);
+        Long grandParentId = grandParent == null ? null : grandParent.getId();
+//        Integer order = itemRepository.getNextChildOrder(item.getProjectId(), grandParentId);
+        Integer order = parent.getChildOrder() + 1;
+        item = itemRepository.setParent(item, grandParent);
+        itemRepository.setChildOrder(item, order);
     }
 
     @ExceptionHandler(RuntimeException.class)

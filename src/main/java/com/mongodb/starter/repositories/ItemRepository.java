@@ -22,4 +22,15 @@ public interface ItemRepository {
     Item createNew(Item item);
 
     void delete(Item item);
+
+    void setChildOrder(Item item, Integer childOrder);
+
+    void resetOrder(Long projectId);
+
+    Item setParent(Item item, Item parent);
+
+    Item getItemAbove(Item item);
+
+    Item getParent(Item item);
+    Integer getNextChildOrder(Long projectId, Long parentId);
 }

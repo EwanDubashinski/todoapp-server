@@ -84,7 +84,8 @@ public class Item {
     }
 
     public Integer getChildOrder() {
-        return childOrder;
+        if (childOrder == null) return Integer.MAX_VALUE;
+        else return childOrder;
     }
 
     public void setChildOrder(Integer childOrder) {
