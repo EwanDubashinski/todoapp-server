@@ -5,14 +5,12 @@ import com.mongodb.starter.repositories.ItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Comparator;
 import java.util.List;
 
-import static java.util.Arrays.asList;
 @CrossOrigin
 @RestController
 @RequestMapping("/api")
@@ -73,11 +71,19 @@ public class ItemController {
     }
     @PostMapping(value = "item/up")
     public void up(@RequestBody Item item) {
-        itemRepository.setChildOrder(item, item.getChildOrder() - 1);
+        Item itemAbove = itemRepository.getItemAbove(item);
+        if (itemAbove != null) {
+            int newOrder = itemAbove.getChildOrder();
+            itemRepository.setChildOrder(item, newOrder);
+        }
     }
     @PostMapping(value = "item/down")
     public void down(@RequestBody Item item) {
-        itemRepository.setChildOrder(item, item.getChildOrder() + 1);
+        Item itemBelow = itemRepository.getItemBelow(item);
+        if (itemBelow != null) {
+            int newOrder = itemBelow.getChildOrder();
+            itemRepository.setChildOrder(item, newOrder);
+        }
     }
     @PostMapping(value = "item/right")
     public void right(@RequestBody Item item) {

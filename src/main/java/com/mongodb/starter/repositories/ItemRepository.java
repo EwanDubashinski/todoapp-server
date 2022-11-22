@@ -30,6 +30,7 @@ public interface ItemRepository {
     Item setParent(Item item, Item parent);
 
     Item getItemAbove(Item item);
+    Item getItemBelow(Item item);
 
     Item getParent(Item item);
     Integer getNextChildOrder(Long projectId, Long parentId);

@@ -3,6 +3,7 @@ package com.mongodb.starter.repositories;
 import com.mongodb.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.starter.models.Item;
 import org.bson.conversions.Bson;
@@ -200,9 +201,21 @@ public class MongoDBItemRepository implements ItemRepository {
     @Override
     public Item getItemAbove(Item item) {
         Bson itemAboveQuery = and(
-                eq("child_order", item.getChildOrder() - 1),
+                lt("child_order", item.getChildOrder()),
                 eq("project_id", item.getProjectId()),
-                eq("parent_id", item.getParentId())
+                eq("parent_id", item.getParentId()),
+                eq("date_completed", null)
+        );
+        return itemCollection.find(itemAboveQuery).first();
+    }
+
+    @Override
+    public Item getItemBelow(Item item) {
+        Bson itemAboveQuery = and(
+                gt("child_order", item.getChildOrder()),
+                eq("project_id", item.getProjectId()),
+                eq("parent_id", item.getParentId()),
+                eq("date_completed", null)
         );
         return itemCollection.find(itemAboveQuery).first();
     }
