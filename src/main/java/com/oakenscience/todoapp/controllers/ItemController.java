@@ -1,7 +1,7 @@
-package com.mongodb.starter.controllers;
+package com.oakenscience.todoapp.controllers;
 
-import com.mongodb.starter.models.Item;
-import com.mongodb.starter.repositories.ItemRepository;
+import com.oakenscience.todoapp.models.Item;
+import com.oakenscience.todoapp.repositories.ItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

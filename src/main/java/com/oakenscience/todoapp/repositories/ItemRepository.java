@@ -1,6 +1,6 @@
-package com.mongodb.starter.repositories;
+package com.oakenscience.todoapp.repositories;
 
-import com.mongodb.starter.models.Item;
+import com.oakenscience.todoapp.models.Item;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

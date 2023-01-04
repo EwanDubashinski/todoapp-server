@@ -1,4 +1,4 @@
-package com.mongodb.starter.models;
+package com.oakenscience.todoapp.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.bson.codecs.pojo.annotations.BsonProperty;

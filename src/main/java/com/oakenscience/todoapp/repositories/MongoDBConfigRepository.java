@@ -1,16 +1,14 @@
-package com.mongodb.starter.repositories;
+package com.oakenscience.todoapp.repositories;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Updates;
-import com.mongodb.starter.models.Config;
-import com.mongodb.starter.models.Item;
+import com.oakenscience.todoapp.models.Config;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
-import java.time.LocalDateTime;
 
 @Repository
 public class MongoDBConfigRepository implements ConfigRepository{

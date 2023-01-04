@@ -1,17 +1,10 @@
-package com.mongodb.starter.controllers;
+package com.oakenscience.todoapp.controllers;
 
-import com.mongodb.starter.models.Project;
-import com.mongodb.starter.repositories.ConfigRepository;
-import com.mongodb.starter.repositories.ProjectRepository;
+import com.oakenscience.todoapp.repositories.ConfigRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-import static java.util.Arrays.asList;
 
 @CrossOrigin
 @RestController

@@ -1,4 +1,4 @@
-package com.mongodb.starter;
+package com.oakenscience.todoapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
