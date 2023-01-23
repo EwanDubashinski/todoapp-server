@@ -6,7 +6,10 @@ import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Updates;
 import com.oakenscience.todoapp.models.User;
+import com.oakenscience.todoapp.models.VerificationToken;
+import org.bson.conversions.Bson;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
@@ -40,5 +43,13 @@ public class MongoDBUserRepository implements UserRepository {
     @Override
     public User findByEmail(String email) {
         return userCollection.find(eq("email", email.toLowerCase())).first();
+    }
+
+    @Override
+    public User updateUserToken(User user) {
+        Bson update = Updates.set("token", user.getToken());
+        Bson query = eq("email", user.getEmail());
+        userCollection.findOneAndUpdate(query, update);
+        return userCollection.find(query).first();
     }
 }

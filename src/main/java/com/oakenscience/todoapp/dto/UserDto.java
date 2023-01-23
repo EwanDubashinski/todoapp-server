@@ -1,5 +1,6 @@
 package com.oakenscience.todoapp.dto;
 
+import com.oakenscience.todoapp.validation.EmailNotExists;
 import com.oakenscience.todoapp.validation.PasswordMatches;
 
 import javax.validation.constraints.Email;
@@ -8,8 +9,6 @@ import javax.validation.constraints.NotNull;
 
 @PasswordMatches
 public class UserDto {
-    @NotNull
-    @NotEmpty
     private String name;
 
     @NotNull
@@ -20,6 +19,7 @@ public class UserDto {
     @NotNull
     @NotEmpty
     @Email
+    @EmailNotExists
     private String email;
 
     public String getName() {
