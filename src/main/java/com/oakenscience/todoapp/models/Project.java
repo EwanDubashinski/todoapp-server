@@ -13,6 +13,7 @@ public class Project {
     private Long id;
     private String name;
     private Long parent;
+    private Long userId;
 
     public Long getId() {
         return id;
@@ -36,5 +37,13 @@ public class Project {
 
     public void setParent(Long parent) {
         this.parent = parent;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

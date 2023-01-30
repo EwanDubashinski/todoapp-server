@@ -1,11 +1,13 @@
 package com.oakenscience.todoapp.service;
 
 import com.oakenscience.todoapp.dto.UserDto;
-import com.oakenscience.todoapp.models.User;
+import com.oakenscience.todoapp.models.DbUser;
 
 public interface IUserService {
 
-    User registerNewUserAccount(UserDto accountDto);
+    DbUser registerNewUserAccount(UserDto accountDto);
 
-    void createVerificationTokenForUser(User user, String token);
+    void createVerificationTokenForUser(DbUser dbUser, String token);
+
+    void activate(String code);
 }

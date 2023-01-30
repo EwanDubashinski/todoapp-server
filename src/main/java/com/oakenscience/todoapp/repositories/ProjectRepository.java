@@ -12,4 +12,6 @@ public interface ProjectRepository {
     List<Project> findAll(List<String> ids);
 
     Project findOne(String id);
+
+    Project createNew(Project project);
 }

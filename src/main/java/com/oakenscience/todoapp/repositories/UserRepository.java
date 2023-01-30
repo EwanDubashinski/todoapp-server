@@ -1,15 +1,19 @@
 package com.oakenscience.todoapp.repositories;
 
-import com.oakenscience.todoapp.models.Item;
-import com.oakenscience.todoapp.models.User;
-import com.oakenscience.todoapp.models.VerificationToken;
+import com.oakenscience.todoapp.models.DbUser;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository {
-    User createNew(User user);
+    DbUser createNew(DbUser dbUser);
 
-    User findByEmail(String email);
+    DbUser findByEmail(String email);
 
-    User updateUserToken(User user);
+    DbUser updateUserToken(DbUser dbUser);
+
+    DbUser findByActivationCode(String code);
+
+    DbUser enable(DbUser dbUser);
+
+    DbUser clearUserTokens(DbUser dbUser);
 }

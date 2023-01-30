@@ -24,9 +24,20 @@ public class MongoDBConfigRepository implements ConfigRepository{
         configCollection = client.getDatabase("todoapp").getCollection("config", Config.class);
     }
 
+    private Config getOrCreate() {
+        Config config = configCollection.find().first();
+        if (config == null) {
+            config = new Config();
+            config.setLastItemId(0L);
+            config.setLastProjectId(0L);
+            config.setLastUserId(0L);
+            configCollection.insertOne(config);
+        };
+        return config;
+    }
     @Override
     public Long getNextItemId() {
-        Config config = configCollection.find().first();
+        Config config = getOrCreate();
         Long nextItemId = config.getLastItemId() + 1;
         Bson update = Updates.set("last_item_id", nextItemId);
         configCollection.updateOne(new Document(), update);
@@ -35,6 +46,19 @@ public class MongoDBConfigRepository implements ConfigRepository{
 
     @Override
     public Long getNextProjectId() {
-        return null;
+        Config config = getOrCreate();
+        Long nextProjectId = config.getLastProjectId() + 1;
+        Bson update = Updates.set("last_project_id", nextProjectId);
+        configCollection.updateOne(new Document(), update);
+        return nextProjectId;
+    }
+
+    @Override
+    public Long getNextUserId() {
+        Config config = getOrCreate();
+        Long nextUserId = config.getLastUserId() + 1;
+        Bson update = Updates.set("last_user_id", nextUserId);
+        configCollection.updateOne(new Document(), update);
+        return nextUserId;
     }
 }

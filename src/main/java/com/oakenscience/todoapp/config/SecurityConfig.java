@@ -25,7 +25,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .httpBasic().and()
                 .authorizeRequests()
-                    .antMatchers("/api/user/registration","/registration", "/index.html", "/", "/home", "/login", "/error", "/*.bundle.*", "/favicon.ico").permitAll()
+                    .antMatchers("/api/user/registration",
+                            "/registration",
+                            "/index.html",
+                            "/",
+                            "/home",
+                            "/login",
+                            "/error",
+                            "/*.bundle.*",
+                            "/favicon.ico",
+                            "/api/user/activate/*",
+                            "/activation/*"
+                    ).permitAll()
                     .anyRequest().authenticated()
                     .and()
                 .logout()

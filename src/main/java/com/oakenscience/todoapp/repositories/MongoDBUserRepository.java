@@ -7,9 +7,9 @@ import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Updates;
-import com.oakenscience.todoapp.models.User;
-import com.oakenscience.todoapp.models.VerificationToken;
+import com.oakenscience.todoapp.models.DbUser;
 import org.bson.conversions.Bson;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
@@ -19,36 +19,60 @@ import static com.mongodb.client.model.Filters.eq;
 @Repository
 public class MongoDBUserRepository implements UserRepository {
 
+    @Autowired
+    private ConfigRepository configRepository;
     private static final TransactionOptions txnOptions = TransactionOptions.builder()
             .readPreference(ReadPreference.primary())
             .readConcern(ReadConcern.MAJORITY)
             .writeConcern(WriteConcern.MAJORITY)
             .build();
     private final MongoClient client;
-    private MongoCollection<User> userCollection;
+    private MongoCollection<DbUser> userCollection;
 
     public MongoDBUserRepository(MongoClient mongoClient) {
         this.client = mongoClient;
     }
     @PostConstruct
     void init() {
-        userCollection = client.getDatabase("todoapp").getCollection("users", User.class);
+        userCollection = client.getDatabase("todoapp").getCollection("users", DbUser.class);
     }
     @Override
-    public User createNew(User user) {
-        userCollection.insertOne(user);
-        return user;
+    public DbUser createNew(DbUser dbUser) {
+        dbUser.setId(configRepository.getNextUserId());
+        userCollection.insertOne(dbUser);
+        return dbUser;
     }
 
     @Override
-    public User findByEmail(String email) {
+    public DbUser findByEmail(String email) {
         return userCollection.find(eq("email", email.toLowerCase())).first();
     }
 
     @Override
-    public User updateUserToken(User user) {
-        Bson update = Updates.set("token", user.getToken());
-        Bson query = eq("email", user.getEmail());
+    public DbUser updateUserToken(DbUser dbUser) {
+        Bson update = Updates.set("token", dbUser.getToken());
+        Bson query = eq("email", dbUser.getEmail());
+        userCollection.findOneAndUpdate(query, update);
+        return userCollection.find(query).first();
+    }
+
+    @Override
+    public DbUser findByActivationCode(String code) {
+        return userCollection.find(eq("token.token", code)).first();
+    }
+
+    @Override
+    public DbUser enable(DbUser dbUser) {
+        Bson update = Updates.set("activated", true);
+        Bson query = eq("email", dbUser.getEmail());
+        userCollection.findOneAndUpdate(query, update);
+        return userCollection.find(query).first();
+    }
+
+    @Override
+    public DbUser clearUserTokens(DbUser dbUser) {
+        Bson update = Updates.set("token", null);
+        Bson query = eq("email", dbUser.getEmail());
         userCollection.findOneAndUpdate(query, update);
         return userCollection.find(query).first();
     }

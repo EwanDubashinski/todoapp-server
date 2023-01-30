@@ -1,6 +1,6 @@
 package com.oakenscience.todoapp.listeners;
 
-import com.oakenscience.todoapp.models.User;
+import com.oakenscience.todoapp.models.DbUser;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.Locale;
@@ -9,25 +9,25 @@ import java.util.Locale;
 public class RegistrationCompleteEvent extends ApplicationEvent {
 
     private Locale locale;
-    private final User user;
+    private final DbUser dbUser;
 
-    public RegistrationCompleteEvent(final User user, final Locale locale) {
-        super(user);
-        this.user = user;
+    public RegistrationCompleteEvent(final DbUser dbUser, final Locale locale) {
+        super(dbUser);
+        this.dbUser = dbUser;
         this.locale = locale;
     }
 
-    public RegistrationCompleteEvent(User user) {
-        super(user);
-        this.user = user;
+    public RegistrationCompleteEvent(DbUser dbUser) {
+        super(dbUser);
+        this.dbUser = dbUser;
     }
 
     public Locale getLocale() {
         return locale;
     }
 
-    public User getUser() {
-        return user;
+    public DbUser getUser() {
+        return dbUser;
     }
 
 }

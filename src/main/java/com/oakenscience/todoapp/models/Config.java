@@ -10,6 +10,8 @@ public class Config {
 
     @BsonProperty("last_project_id")
     private Long lastProjectId;
+    @BsonProperty("last_user_id")
+    private Long lastUserId;
 
     public Long getLastItemId() {
         return lastItemId;
@@ -25,5 +27,13 @@ public class Config {
 
     public void setLastProjectId(Long lastProjectId) {
         this.lastProjectId = lastProjectId;
+    }
+
+    public Long getLastUserId() {
+        return lastUserId;
+    }
+
+    public void setLastUserId(Long lastUserId) {
+        this.lastUserId = lastUserId;
     }
 }

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 public interface ConfigRepository {
     public Long getNextItemId();
     public Long getNextProjectId();
+    public Long getNextUserId();
 }

@@ -21,7 +21,7 @@ import static com.mongodb.client.model.Filters.*;
 public class MongoDBItemRepository implements ItemRepository {
 
     @Autowired
-    private MongoDBConfigRepository configRepository;
+    private ConfigRepository configRepository;
 
     private static final TransactionOptions txnOptions = TransactionOptions.builder()
                                                                            .readPreference(ReadPreference.primary())

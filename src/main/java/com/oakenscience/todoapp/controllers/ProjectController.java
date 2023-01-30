@@ -1,5 +1,6 @@
 package com.oakenscience.todoapp.controllers;
 
+import com.oakenscience.todoapp.models.Item;
 import com.oakenscience.todoapp.models.Project;
 import com.oakenscience.todoapp.repositories.ProjectRepository;
 import org.slf4j.Logger;
@@ -42,10 +43,18 @@ public class ProjectController {
         return projectRepository.findAll(listIds);
     }
 
+    @PostMapping(value = "project/create")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Project createNew(@RequestBody Project project) {
+        return projectRepository.createNew(project);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public final Exception handleAllExceptions(RuntimeException e) {
         LOGGER.error("Internal server error.", e);
         return e;
     }
+
+
 }
