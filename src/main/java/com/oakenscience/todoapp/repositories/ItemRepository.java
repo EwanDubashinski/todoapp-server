@@ -27,11 +27,11 @@ public interface ItemRepository {
 
     void resetOrder(Long projectId);
 
-    Item setParent(Item item, Item parent);
 
-    Item getItemAbove(Item item);
     Item getItemBelow(Item item);
+    Item getItemAbove(Item item);
 
     Item getParent(Item item);
+    Item setParent(Item item, Item parent);
     Integer getNextChildOrder(Long projectId, Long parentId);
 }

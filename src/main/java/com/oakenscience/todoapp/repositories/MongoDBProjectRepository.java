@@ -159,4 +159,29 @@ public class MongoDBProjectRepository implements ProjectRepository {
         });
     }
 
+    @Override
+    public Integer getNextChildOrder(Long parentId) {
+        Bson query = auth.forCurrentUser(eq("parent_id", parentId));
+//        List<Project> projects = projectCollection.find(query).into(new ArrayList<>()); // TODO: for debug reasons only
+        return (int)projectCollection.countDocuments(query);
+    }
+    @Override
+    public Project setParent(Project project, Project parent) {
+        Bson query = auth.forCurrentUser(eq("id", project.getId()));
+        Long parentId = null;
+        if (parent != null) parentId = parent.getId();
+        Bson update = Updates.set("parent_id", parentId);
+        projectCollection.findOneAndUpdate(query, update);
+        return projectCollection.find(query).first();
+    }
+
+    @Override
+    public Project getParent(Project project) {
+        Project parent = null;
+        if (project.getParentId() != null) {
+            Bson filter = auth.forCurrentUser(eq("id", project.getParentId()));
+            parent = projectCollection.find(filter).first();
+        }
+        return parent;
+    }
 }

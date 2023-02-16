@@ -25,4 +25,10 @@ public interface ProjectRepository {
     void setChildOrder(Project project, Integer childOrder);
 
     void resetOrder();
+
+    Integer getNextChildOrder(Long parentId);
+
+    Project getParent(Project project);
+    Project setParent(Project project, Project parent);
+
 }

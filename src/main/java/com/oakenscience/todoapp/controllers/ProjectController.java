@@ -79,6 +79,29 @@ public class ProjectController {
     public void resetOrder() {
         projectRepository.resetOrder();
     }
+
+    @PostMapping(value = "project/right")
+    public void right(@RequestBody Project project) {
+        Project projectAbove = projectRepository.getProjectAbove(project);
+        if (projectAbove != null) {
+            Integer order = projectRepository.getNextChildOrder(projectAbove.getId());
+            project = projectRepository.setParent(project, projectAbove);
+            projectRepository.setChildOrder(project, order);
+        };
+    }
+    @PostMapping(value = "project/left")
+    public void left(@RequestBody Project project) {
+        if (project.getParentId() == null) return;
+
+        Project parent = projectRepository.getParent(project);
+        Project grandParent = projectRepository.getParent(parent);
+        Long grandParentId = grandParent == null ? null : grandParent.getId();
+//        Integer order = itemRepository.getNextChildOrder(project.getProjectId(), grandParentId);
+        Integer order = parent.getChildOrder() + 1;
+        project = projectRepository.setParent(project, grandParent);
+        projectRepository.setChildOrder(project, order);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public final Exception handleAllExceptions(RuntimeException e) {
