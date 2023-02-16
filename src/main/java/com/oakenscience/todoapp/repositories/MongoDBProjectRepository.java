@@ -1,29 +1,25 @@
 package com.oakenscience.todoapp.repositories;
 
-import com.mongodb.ReadConcern;
-import com.mongodb.ReadPreference;
-import com.mongodb.TransactionOptions;
-import com.mongodb.WriteConcern;
+import com.mongodb.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Updates;
 import com.oakenscience.todoapp.config.IAuthenticationFacade;
+import com.oakenscience.todoapp.models.Item;
 import com.oakenscience.todoapp.models.Project;
-import com.oakenscience.todoapp.models.UserInfo;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Aggregates.group;
-import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Filters.gt;
 
 @Repository
 public class MongoDBProjectRepository implements ProjectRepository {
@@ -31,7 +27,7 @@ public class MongoDBProjectRepository implements ProjectRepository {
     private ConfigRepository configRepository;
 
     @Autowired
-    private IAuthenticationFacade authenticationFacade;
+    private IAuthenticationFacade auth;
 
     private static final TransactionOptions txnOptions = TransactionOptions.builder()
                                                                            .readPreference(ReadPreference.primary())
@@ -52,31 +48,115 @@ public class MongoDBProjectRepository implements ProjectRepository {
 
     @Override
     public List<Project> findAll() {
-        return projectCollection.find().into(new ArrayList<>());
-    }
-
-    @Override
-    public List<Project> findAll(List<String> ids) {
-        return projectCollection.find(in("_id", mapToObjectIds(ids))).into(new ArrayList<>());
-    }
-
-    @Override
-    public Project findOne(String id) {
-        return projectCollection.find(eq("_id", new ObjectId(id))).first();
-    }
-
-    private List<ObjectId> mapToObjectIds(List<String> ids) {
-        return ids.stream().map(ObjectId::new).collect(Collectors.toList());
+        return projectCollection.find(
+                auth.forCurrentUser(ne("is_archived", 1))
+        ).into(new ArrayList<>());
     }
 
     @Override
     public Project createNew(Project project) {
         Long projectId = configRepository.getNextProjectId();
         project.setId(projectId);
-        Long userId = authenticationFacade.getCurrentUser().getId();
+        project.setIsArchived(0);
+        Long userId = auth.getCurrentUserId();
         if (userId == null) throw new RuntimeException(); // TODO
         project.setUserId(userId);
         projectCollection.insertOne(project);
         return projectCollection.find(eq("id", projectId)).first();
     }
+
+    @Override
+    public void setCollapsed(Project project) {
+        Bson filter = auth.forCurrentUser(eq("id", project.getId()));
+        Bson update = Updates.set("collapsed", project.getCollapsed());
+        projectCollection.findOneAndUpdate(filter, update);
+    }
+
+    @Override
+    public Project update(Project project) {
+        Bson update = Updates.set("name", project.getName());
+        Bson filter = auth.forCurrentUser(eq("id", project.getId()));
+        projectCollection.findOneAndUpdate(filter, update);
+        return projectCollection.find(filter).first();
+    }
+
+    @Override
+    public void delete(Project project) {
+        Bson filter = auth.forCurrentUser(eq("id", project.getId()));
+        projectCollection.deleteOne(filter);
+    }
+
+    @Override
+    public Project getProjectAbove(Project project) {
+        Bson itemAboveQuery = auth.forCurrentUser(and(
+                lt("child_order", project.getChildOrder()),
+                eq("parent_id", project.getParentId()),
+                eq("is_archived", 0)
+        ));
+        return projectCollection
+                .find(itemAboveQuery)
+                .sort(eq("child_order", -1))
+                .first();
+    }
+
+    @Override
+    public Project getProjectBelow(Project project) {
+        Bson itemAboveQuery = auth.forCurrentUser(and(
+                gt("child_order", project.getChildOrder()),
+                eq("parent_id", project.getParentId()),
+                eq("is_archived", 0)
+        ));
+        return projectCollection.find(itemAboveQuery).first();
+    }
+
+    @Override
+    public void setChildOrder(Project project, Integer childOrder) {
+        Bson listQuery = auth.forCurrentUser(eq("parent_id", project.getParentId()));
+        LinkedList<Project> projects = projectCollection
+                .find(listQuery)
+                .sort(new BasicDBObject("child_order", 1))
+                .into(new LinkedList<>());
+
+        Project movingProject = projects
+                .stream()
+                .filter(p -> Objects.equals(p.getId(), project.getId()))
+                .findFirst()
+                .orElse(null);
+
+        int movingProjectIndex = projects.indexOf(movingProject);
+        if (childOrder != movingProjectIndex) {
+            projects.remove(movingProjectIndex);
+            projects.add(childOrder, movingProject);
+        }
+
+        for (int i = 0; i < projects.size(); i++) {
+            Project listProject = projects.get(i);
+            if (listProject.getChildOrder() != i) {
+                Bson query = auth.forCurrentUser(eq("id", listProject.getId()));
+                Bson update = Updates.set("child_order", i);
+                projectCollection.findOneAndUpdate(query, update);
+            }
+        }
+    }
+    @Override
+    public void resetOrder() {
+        List<Project> projects = findAll();
+
+        Map<Long, List<Project>> projectsByParentId = new HashMap<>();
+
+        for (Project project : projects) {
+            projectsByParentId.computeIfAbsent(project.getParentId(), k -> new ArrayList<>()).add(project);
+        }
+
+        projectsByParentId.forEach((parentId, projectsGroup) -> {
+            projectsGroup.sort(Comparator.comparing(Project::getChildOrder, Comparator.nullsLast(Comparator.naturalOrder())));
+            for (int i = 0; i < projectsGroup.size(); i++) {
+                Project project = projectsGroup.get(i);
+                Bson query = auth.forCurrentUser(eq("id", project.getId()));
+                Bson update = Updates.set("child_order", i);
+                projectCollection.findOneAndUpdate(query, update);
+            }
+        });
+    }
+
 }

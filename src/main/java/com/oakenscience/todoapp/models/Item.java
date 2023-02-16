@@ -33,6 +33,9 @@ public class Item {
     @BsonProperty("child_order")
     private Integer childOrder;
 
+    @BsonProperty("user_id")
+    private Long userId;
+
     @BsonId
     public ObjectId get_id() {
         return _id;
@@ -81,6 +84,14 @@ public class Item {
 
     public void setDateCompleted(LocalDateTime dateCompleted) {
         this.dateCompleted = dateCompleted;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public Integer getChildOrder() {

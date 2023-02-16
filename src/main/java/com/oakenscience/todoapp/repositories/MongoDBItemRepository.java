@@ -4,6 +4,7 @@ import com.mongodb.*;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Updates;
+import com.oakenscience.todoapp.config.IAuthenticationFacade;
 import com.oakenscience.todoapp.models.Item;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -22,6 +23,9 @@ public class MongoDBItemRepository implements ItemRepository {
 
     @Autowired
     private ConfigRepository configRepository;
+
+    @Autowired
+    private IAuthenticationFacade auth;
 
     private static final TransactionOptions txnOptions = TransactionOptions.builder()
                                                                            .readPreference(ReadPreference.primary())
@@ -42,30 +46,32 @@ public class MongoDBItemRepository implements ItemRepository {
 
     @Override
     public List<Item> findAll() {
-        return itemCollection.find().into(new ArrayList<>());
+        return itemCollection.find(auth.forCurrentUser()).into(new ArrayList<>());
     }
 
     @Override
     public Item findOne(Long id) {
-//        BasicDBObject query = new BasicDBObject("id", id);
-        return itemCollection.find(eq("id", id)).first();
+        Bson filter = auth.forCurrentUser(eq("id", id));
+        return itemCollection.find(filter).first();
     }
 
     @Override
     public List<Item> findByProjectID(Long projectId) {
-        return itemCollection.find(eq("project_id", projectId)).into(new ArrayList<>());
+        Bson filter = auth.forCurrentUser(eq("project_id", projectId));
+        return itemCollection.find(filter).into(new ArrayList<>());
     }
 
     private List<Long> getChildrenIds(Long id) {
+        Bson filter = auth.forCurrentUser(eq("id", id));
+        Bson filterByParent = auth.forCurrentUser(eq("parent_id", id));
+
         List<Long> ids = new ArrayList<>();
-        Item item = itemCollection.find(eq("id", id)).first();
+        Item item = itemCollection.find(filter).first();
         if (item != null) {
             ids.add(id);
-            itemCollection.find(eq("parent_id", id)).forEach(i -> {
-//                ids.add(i.getId());
+            itemCollection.find(filterByParent).forEach(i -> {
                 ids.addAll(getChildrenIds(i.getId()));
             });
-//            if (item.getParentId() != null)
         }
         return ids;
     }
@@ -74,52 +80,50 @@ public class MongoDBItemRepository implements ItemRepository {
     @Override
     public void markAsDone(Long id) {
         Bson update = Updates.set("date_completed", LocalDateTime.now());
-//        itemCollection.findOneAndUpdate(eq("id", id), update);
-//        Document query = new Document()
-//                .append("parent_id",  id)
-//                .append("date_completed", null);
-        Bson filter = and(eq("date_completed", null), in("id", getChildrenIds(id)));
+        Bson filter = auth.forCurrentUser(and(
+                eq("date_completed", null),
+                in("id", getChildrenIds(id))
+        ));
         itemCollection.updateMany(filter, update);
     }
     @Override
     public void markAsNotDone(Long id) {
         Bson update = Updates.set("date_completed", null);
-        LocalDateTime modifiedDate = Objects.requireNonNull(
-                itemCollection.find(eq("id", id)).first())
-                .getDateCompleted();
+        Bson filter = auth.forCurrentUser(eq("id", id));
 
-//        itemCollection.findOneAndUpdate(eq("id", id), update);
-//        Document query = new Document()
-//                .append("parent_id",  id)
-//                .append("date_completed", modifiedDate);
-        Bson filter = and(eq("date_completed", modifiedDate), in("id", getChildrenIds(id)));
-        itemCollection.updateMany(filter, update);
+        Item item = itemCollection.find(filter).first();
+        if (item != null) {
+            LocalDateTime modifiedDate = item.getDateCompleted();
+            Bson filterForUpdate = auth.forCurrentUser(and(
+                    eq("date_completed", null),
+                    in("id", getChildrenIds(id))
+            ));
+            itemCollection.updateMany(filterForUpdate, update);
+        }
     }
 
     @Override
     public Item updateItemText(Item item) {
         Bson update = Updates.set("content", item.getContent());
-        Bson query = eq("id", item.getId());
-        itemCollection.findOneAndUpdate(query, update);
-        return itemCollection.find(query).first();
+        Bson filter = auth.forCurrentUser(eq("id", item.getId()));
+        itemCollection.findOneAndUpdate(filter, update);
+        return itemCollection.find(filter).first();
     }
 
     @Override
     public Item createNew(Item item) {
-//        Item item = new Item(configRepository.getNextItemId(), item);
+        Long userId = auth.getCurrentUserId();
+        if (userId == null) throw new RuntimeException(); // TODO
+        item.setUserId(userId);
         item.setId(configRepository.getNextItemId());
         itemCollection.insertOne(item);
         return item;
     }
 
-    private List<ObjectId> mapToObjectIds(List<String> ids) {
-        return ids.stream().map(ObjectId::new).collect(Collectors.toList());
-    }
-
     @Override
     public void delete(Item item) {
-        Bson query = eq("id", item.getId());
-        itemCollection.deleteOne(query);
+        Bson filter = auth.forCurrentUser(eq("id", item.getId()));
+        itemCollection.deleteOne(filter);
     }
 
     @Override
@@ -144,10 +148,10 @@ public class MongoDBItemRepository implements ItemRepository {
 //        itemCollection.findOneAndUpdate(query, updateNew);
 //        itemCollection.findOneAndUpdate(oldQuery, updateOld);
 
-        Bson listQuery = and(
+        Bson listQuery = auth.forCurrentUser(and(
                 eq("project_id", item.getProjectId()),
                 eq("parent_id", item.getParentId())
-        );
+        ));
         LinkedList<Item> items = itemCollection
                 .find(listQuery)
                 .sort(new BasicDBObject("child_order", 1))
@@ -169,7 +173,7 @@ public class MongoDBItemRepository implements ItemRepository {
         for (int i = 0; i < items.size(); i++) {
             Item listItem = items.get(i);
             if (listItem.getChildOrder() != i) {
-                Bson query = eq("id", listItem.getId());
+                Bson query = auth.forCurrentUser(eq("id", listItem.getId()));
                 Bson update = Updates.set("child_order", i);
                 itemCollection.findOneAndUpdate(query, update);
             }
@@ -190,7 +194,7 @@ public class MongoDBItemRepository implements ItemRepository {
             itemsGroup.sort(Comparator.comparing(Item::getChildOrder));
             for (int i = 0; i < itemsGroup.size(); i++) {
                 Item item = itemsGroup.get(i);
-                Bson query = eq("id", item.getId());
+                Bson query = auth.forCurrentUser(eq("id", item.getId()));
                 Bson update = Updates.set("child_order", i);
                 itemCollection.findOneAndUpdate(query, update);
             }
@@ -199,29 +203,32 @@ public class MongoDBItemRepository implements ItemRepository {
 
     @Override
     public Item getItemAbove(Item item) {
-        Bson itemAboveQuery = and(
+        Bson itemAboveQuery = auth.forCurrentUser(and(
                 lt("child_order", item.getChildOrder()),
                 eq("project_id", item.getProjectId()),
                 eq("parent_id", item.getParentId()),
                 eq("date_completed", null)
-        );
-        return itemCollection.find(itemAboveQuery).first();
+        ));
+        return itemCollection
+                .find(itemAboveQuery)
+                .sort(eq("child_order", -1))
+                .first();
     }
 
     @Override
     public Item getItemBelow(Item item) {
-        Bson itemAboveQuery = and(
+        Bson itemAboveQuery = auth.forCurrentUser(and(
                 gt("child_order", item.getChildOrder()),
                 eq("project_id", item.getProjectId()),
                 eq("parent_id", item.getParentId()),
                 eq("date_completed", null)
-        );
+        ));
         return itemCollection.find(itemAboveQuery).first();
     }
 
     @Override
     public Item setParent(Item item, Item parent) {
-        Bson query = eq("id", item.getId());
+        Bson query = auth.forCurrentUser(eq("id", item.getId()));
         Long parentId = null;
         if (parent != null) parentId = parent.getId();
         Bson update = Updates.set("parent_id", parentId);
@@ -233,17 +240,18 @@ public class MongoDBItemRepository implements ItemRepository {
     public Item getParent(Item item) {
         Item parent = null;
         if (item.getParentId() != null) {
-            parent = itemCollection.find(eq("id", item.getParentId())).first();
+            Bson filter = auth.forCurrentUser(eq("id", item.getParentId()));
+            parent = itemCollection.find(filter).first();
         }
         return parent;
     }
 
     @Override
     public Integer getNextChildOrder(Long projectId, Long parentId) {
-        Bson query = and(
+        Bson query = auth.forCurrentUser(and(
                 eq("parent_id", parentId),
                 eq("project_id", projectId)
-        );
+        ));
         List<Item> items = itemCollection.find(query).into(new ArrayList<>()); // TODO: for debug reasons only
         return (int)itemCollection.countDocuments(query);
     }

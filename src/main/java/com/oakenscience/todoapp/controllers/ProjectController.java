@@ -25,36 +25,64 @@ public class ProjectController {
     }
 
     @GetMapping("projects")
-    public List<Project> getPersons() {
+    public List<Project> getProjects() {
         return projectRepository.findAll();
     }
 
-    @GetMapping("project/{id}")
-    public ResponseEntity<Project> getPerson(@PathVariable String id) {
-        Project project = projectRepository.findOne(id);
-        if (project == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        return ResponseEntity.ok(project);
-    }
-
-    @GetMapping("projects/{ids}")
-    public List<Project> getProjects(@PathVariable String ids) {
-        List<String> listIds = asList(ids.split(","));
-        return projectRepository.findAll(listIds);
-    }
+//    @GetMapping("project/{id}")
+//    public ResponseEntity<Project> getPerson(@PathVariable String id) {
+//        Project project = projectRepository.findOne(id);
+//        if (project == null)
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+//        return ResponseEntity.ok(project);
+//    }
 
     @PostMapping(value = "project/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Project createNew(@RequestBody Project project) {
         return projectRepository.createNew(project);
     }
+    @PostMapping(value = "project/update")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Project update(@RequestBody Project project) {
+        return projectRepository.update(project);
+    }
 
+    @PostMapping(value = "project/delete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@RequestBody Project project) {
+        projectRepository.delete(project);
+    }
+    @PostMapping(value = "project/collapsed")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setCollapsed(@RequestBody Project project) {
+        projectRepository.setCollapsed(project);
+    }
+
+    @PostMapping(value = "project/up")
+    public void up(@RequestBody Project project) {
+        Project projectAbove = projectRepository.getProjectAbove(project);
+        if (projectAbove != null) {
+            int newOrder = projectAbove.getChildOrder();
+            projectRepository.setChildOrder(project, newOrder);
+        }
+    }
+    @PostMapping(value = "project/down")
+    public void down(@RequestBody Project project) {
+        Project projectBelow = projectRepository.getProjectBelow(project);
+        if (projectBelow != null) {
+            int newOrder = projectBelow.getChildOrder();
+            projectRepository.setChildOrder(project, newOrder);
+        }
+    }
+    @PostMapping(value = "project/reset")
+    public void resetOrder() {
+        projectRepository.resetOrder();
+    }
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public final Exception handleAllExceptions(RuntimeException e) {
         LOGGER.error("Internal server error.", e);
         return e;
     }
-
-
 }

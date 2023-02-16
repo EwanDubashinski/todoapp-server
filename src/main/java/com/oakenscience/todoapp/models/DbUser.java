@@ -1,10 +1,11 @@
 package com.oakenscience.todoapp.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.bson.codecs.pojo.annotations.BsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DbUser {
-
+    @BsonProperty("id")
     private Long id;
     private String name;
     private String password;
