@@ -9,7 +9,5 @@ RUN yum -y install unzip
 RUN mkdir -m 755 /www
 WORKDIR "/www"
 RUN wget -P /www https://gitlab.com/api/v4/projects/40920491/jobs/artifacts/master/download?job=build&private_token=${GLTOKEN}
-RUN ls
-RUN unzip build.zip
-RUN ls
+RUN unzip /www/build.zip
 ENTRYPOINT ["java","-jar","/todoapp-srv-1.0.0.jar"]
