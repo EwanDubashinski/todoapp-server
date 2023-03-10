@@ -17,3 +17,8 @@ build:
   script:
   - mvn clean package -DskipTests=true
   - ls
+
+deploy-to-cloud-run:
+  stage: deploy
+  needs:
+    - build
