@@ -1,5 +1,6 @@
 FROM maven:latest as build-stage
 COPY . .
+RUN ls
 RUN mvn clean package
 
 # production stage
