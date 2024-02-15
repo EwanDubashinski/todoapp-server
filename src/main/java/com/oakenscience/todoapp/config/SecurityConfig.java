@@ -29,6 +29,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                             "/registration",
                             "/index.html",
                             "/",
+                            "/assets/*",
                             "/home",
                             "/login",
                             "/error",
