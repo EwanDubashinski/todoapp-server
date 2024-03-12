@@ -29,7 +29,7 @@ public class ProjectController {
         return projectRepository.findAll();
     }
 
-//    @GetMapping("project/{id}")
+//    @GetMapping("projects/{id}")
 //    public ResponseEntity<Project> getPerson(@PathVariable String id) {
 //        Project project = projectRepository.findOne(id);
 //        if (project == null)
@@ -37,29 +37,29 @@ public class ProjectController {
 //        return ResponseEntity.ok(project);
 //    }
 
-    @PostMapping(value = "project/create")
+    @PostMapping(value = "projects/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Project createNew(@RequestBody Project project) {
         return projectRepository.createNew(project);
     }
-    @PostMapping(value = "project/update")
+    @PutMapping(value = "projects/update")
     @ResponseStatus(HttpStatus.CREATED)
     public Project update(@RequestBody Project project) {
         return projectRepository.update(project);
     }
 
-    @PostMapping(value = "project/delete")
+    @PostMapping(value = "projects/delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@RequestBody Project project) {
         projectRepository.delete(project);
     }
-    @PostMapping(value = "project/collapsed")
+    @PostMapping(value = "projects/collapsed")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void setCollapsed(@RequestBody Project project) {
         projectRepository.setCollapsed(project);
     }
 
-    @PostMapping(value = "project/up")
+    @PostMapping(value = "projects/up")
     public void up(@RequestBody Project project) {
         Project projectAbove = projectRepository.getProjectAbove(project);
         if (projectAbove != null) {
@@ -67,7 +67,7 @@ public class ProjectController {
             projectRepository.setChildOrder(project, newOrder);
         }
     }
-    @PostMapping(value = "project/down")
+    @PostMapping(value = "projects/down")
     public void down(@RequestBody Project project) {
         Project projectBelow = projectRepository.getProjectBelow(project);
         if (projectBelow != null) {
@@ -75,12 +75,12 @@ public class ProjectController {
             projectRepository.setChildOrder(project, newOrder);
         }
     }
-    @PostMapping(value = "project/reset")
+    @PostMapping(value = "projects/reset")
     public void resetOrder() {
         projectRepository.resetOrder();
     }
 
-    @PostMapping(value = "project/right")
+    @PostMapping(value = "projects/right")
     public void right(@RequestBody Project project) {
         Project projectAbove = projectRepository.getProjectAbove(project);
         if (projectAbove != null) {
@@ -89,7 +89,7 @@ public class ProjectController {
             projectRepository.setChildOrder(project, order);
         };
     }
-    @PostMapping(value = "project/left")
+    @PostMapping(value = "projects/left")
     public void left(@RequestBody Project project) {
         if (project.getParentId() == null) return;
 
