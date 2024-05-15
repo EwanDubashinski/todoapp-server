@@ -49,9 +49,9 @@ public class ProjectController {
     }
 
     @PostMapping(value = "projects/delete")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@RequestBody Project project) {
-        projectRepository.delete(project);
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public Long delete(@RequestBody Project project) {
+        return projectRepository.delete(project);
     }
     @PostMapping(value = "projects/collapsed")
     @ResponseStatus(HttpStatus.NO_CONTENT)

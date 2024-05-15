@@ -5,17 +5,13 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Updates;
 import com.oakenscience.todoapp.config.IAuthenticationFacade;
-import com.oakenscience.todoapp.models.Item;
 import com.oakenscience.todoapp.models.Project;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Aggregates.group;
 import static com.mongodb.client.model.Filters.*;
@@ -81,9 +77,11 @@ public class MongoDBProjectRepository implements ProjectRepository {
     }
 
     @Override
-    public void delete(Project project) {
-        Bson filter = auth.forCurrentUser(eq("id", project.getId()));
+    public Long delete(Project project) {
+        Long projectId = project.getId();
+        Bson filter = auth.forCurrentUser(eq("id", projectId));
         projectCollection.deleteOne(filter);
+        return projectId;
     }
 
     @Override

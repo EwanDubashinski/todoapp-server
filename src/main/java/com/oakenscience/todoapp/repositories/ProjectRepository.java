@@ -1,6 +1,5 @@
 package com.oakenscience.todoapp.repositories;
 
-import com.oakenscience.todoapp.models.Item;
 import com.oakenscience.todoapp.models.Project;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +13,7 @@ public interface ProjectRepository {
 
     Project update(Project project);
 
-    void delete(Project project);
+    Long delete(Project project);
 
     void setCollapsed(Project project);
 
