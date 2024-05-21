@@ -1,17 +1,24 @@
 package com.oakenscience.todoapp.repositories;
 
 import com.mongodb.*;
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.WriteModel;
 import com.oakenscience.todoapp.config.IAuthenticationFacade;
 import com.oakenscience.todoapp.models.Project;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Aggregates.group;
 import static com.mongodb.client.model.Filters.*;
@@ -54,6 +61,7 @@ public class MongoDBProjectRepository implements ProjectRepository {
         Long projectId = configRepository.getNextProjectId();
         project.setId(projectId);
         project.setIsArchived(0);
+        project.setChildOrder(getNextChildOrder(null));
         Long userId = auth.getCurrentUserId();
         if (userId == null) throw new RuntimeException(); // TODO
         project.setUserId(userId);
@@ -70,10 +78,51 @@ public class MongoDBProjectRepository implements ProjectRepository {
 
     @Override
     public Project update(Project project) {
-        Bson update = Updates.set("name", project.getName());
+        Bson update = Updates.combine(
+                Updates.set("name", project.getName()),
+                Updates.set("child_order", project.getChildOrder())
+        );
         Bson filter = auth.forCurrentUser(eq("id", project.getId()));
         projectCollection.findOneAndUpdate(filter, update);
         return projectCollection.find(filter).first();
+    }
+    @Override
+    public List<Project> updateMany(List<Project> projects) {
+        List<WriteModel<Project>> bulkWrites = new ArrayList<>();
+
+        for (Project project : projects) {
+            // Construct the filter to identify the document to be updated
+            Bson filter = Filters.eq("id", project.getId());
+
+            // Construct the update operation for each project
+            Bson update = Updates.combine(
+//                    Updates.set("name", project.getName()),
+                    Updates.set("child_order", project.getChildOrder()),
+                    Updates.set("parent_id", project.getParentId())
+            );
+
+            // Create an UpdateOneModel for the update operation
+            UpdateOneModel<Project> updateModel = new UpdateOneModel<>(filter, update);
+
+            // Add the update model to the list of bulk write operations
+            bulkWrites.add(updateModel);
+        }
+
+        // Execute the bulk write operation
+        BulkWriteResult bulkWriteResult = projectCollection.bulkWrite(bulkWrites);
+        List<Long> ids = projects
+                .stream()
+                .map(Project::getId)
+                .collect(Collectors.toList());
+        Bson filter = Filters.in("id", ids);
+        FindIterable<Project> updatedProjects = projectCollection.find(filter);
+        List<Project> updatedProjectsList = new ArrayList<>();
+        for (Project updatedProject: updatedProjects) {
+            updatedProjectsList.add(updatedProject);
+        }
+//        updatedProjects.iterator().forEachRemaining(updatedProjectsList::add);
+        // Return the list of updated projects
+        return updatedProjectsList;
     }
 
     @Override
@@ -161,7 +210,7 @@ public class MongoDBProjectRepository implements ProjectRepository {
     public Integer getNextChildOrder(Long parentId) {
         Bson query = auth.forCurrentUser(eq("parent_id", parentId));
 //        List<Project> projects = projectCollection.find(query).into(new ArrayList<>()); // TODO: for debug reasons only
-        return (int)projectCollection.countDocuments(query);
+        return (int)projectCollection.countDocuments(query) + 1;
     }
     @Override
     public Project setParent(Project project, Project parent) {

@@ -48,6 +48,12 @@ public class ProjectController {
         return projectRepository.update(project);
     }
 
+    @PutMapping(value = "projects/updateMany")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<Project> updateMany(@RequestBody List<Project> projects) {
+        return projectRepository.updateMany(projects);
+    }
+
     @PostMapping(value = "projects/delete")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public Long delete(@RequestBody Project project) {

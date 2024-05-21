@@ -12,6 +12,7 @@ public interface ProjectRepository {
     Project createNew(Project project);
 
     Project update(Project project);
+    List<Project> updateMany(List<Project> projects);
 
     Long delete(Project project);
 
