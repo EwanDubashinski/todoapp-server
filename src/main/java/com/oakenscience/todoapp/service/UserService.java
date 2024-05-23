@@ -20,7 +20,8 @@ public class UserService implements IUserService{
     @Autowired
     UserRepository userRepository;
 
-
+    @Autowired
+    AuthenticationService authenticationService;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Override
@@ -28,14 +29,7 @@ public class UserService implements IUserService{
 //        if (emailExists(accountDto.getEmail())) {
 //            throw new UserAlreadyExistException("There is an account with that email address: " + accountDto.getEmail());
 //        }
-        final DbUser dbUser = new DbUser();
-
-        dbUser.setName(accountDto.getName());
-        dbUser.setPassword(passwordEncoder.encode(accountDto.getPassword()));
-        dbUser.setEmail(accountDto.getEmail());
-        dbUser.setToken(new VerificationToken());
-        dbUser.setActivated(false);
-        return userRepository.createNew(dbUser);
+        return authenticationService.signup(accountDto);
     }
 
     @Override

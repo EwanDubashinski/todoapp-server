@@ -5,9 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -19,14 +21,23 @@ import java.util.Locale;
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
     @Autowired
     private MessageSource messages;
+
     @Override
-    protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         logger.error("400 Status Code", ex);
         BindingResult result = ex.getBindingResult();
-        final GenericResponse bodyOfResponse = new GenericResponse(result.getAllErrors(), "Invalid" + result.getObjectName());
-        return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
-//        return super.handleBindException(ex, headers, status, request);
+        GenericResponse bodyOfResponse = new GenericResponse(result.getAllErrors(), "Invalid " + result.getObjectName());
+        return handleExceptionInternal(ex, bodyOfResponse, headers, status, request);
     }
+
+//    @Override
+//    protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+//        logger.error("400 Status Code", ex);
+//        BindingResult result = ex.getBindingResult();
+//        final GenericResponse bodyOfResponse = new GenericResponse(result.getAllErrors(), "Invalid" + result.getObjectName());
+//        return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+////        return super.handleBindException(ex, headers, status, request);
+//    }
 
     // 409
     @ExceptionHandler({ UserAlreadyExistException.class })

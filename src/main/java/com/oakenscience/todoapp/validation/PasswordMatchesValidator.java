@@ -2,8 +2,8 @@ package com.oakenscience.todoapp.validation;
 
 import com.oakenscience.todoapp.dto.UserDto;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 public class PasswordMatchesValidator
         implements ConstraintValidator<PasswordMatches, Object> {
