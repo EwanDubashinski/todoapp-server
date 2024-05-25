@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import io.jsonwebtoken.MalformedJwtException;
 
 import java.util.Locale;
 
@@ -21,6 +22,7 @@ import java.util.Locale;
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
     @Autowired
     private MessageSource messages;
+
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -54,5 +56,14 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
         String message = messages.getMessage("message.actError", null, locale);
         final GenericResponse bodyOfResponse = new GenericResponse(message, "ActivationFailed");
         return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.FORBIDDEN, request);
+    }
+
+    @ExceptionHandler({MalformedJwtException.class})
+    public ResponseEntity<Object> handleMalformedJwtException(final RuntimeException ex, final WebRequest request) {
+        logger.error("401 Status Code", ex);
+        Locale locale = request.getLocale();
+        String message = messages.getMessage("message.badToken", null, locale);
+        final GenericResponse bodyOfResponse = new GenericResponse(message, "Bad token");
+        return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
     }
 }
