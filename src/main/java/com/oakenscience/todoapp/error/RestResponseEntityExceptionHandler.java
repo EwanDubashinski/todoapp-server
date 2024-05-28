@@ -1,6 +1,8 @@
 package com.oakenscience.todoapp.error;
 
 import com.oakenscience.todoapp.dto.GenericResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpHeaders;
@@ -59,11 +61,21 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     }
 
     @ExceptionHandler({MalformedJwtException.class})
-    public ResponseEntity<Object> handleMalformedJwtException(final RuntimeException ex, final WebRequest request) {
+    public ResponseEntity<Object> handleMalformedJwtException(final RuntimeException ex, final WebRequest request, HttpServletResponse response) {
         logger.error("401 Status Code", ex);
         Locale locale = request.getLocale();
         String message = messages.getMessage("message.badToken", null, locale);
         final GenericResponse bodyOfResponse = new GenericResponse(message, "Bad token");
-        return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+
+        Cookie cookie = new Cookie("token", null);
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Location", "/login");
+
+        return handleExceptionInternal(ex, bodyOfResponse, headers, HttpStatus.SEE_OTHER, request);
     }
 }
