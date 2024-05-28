@@ -46,7 +46,7 @@ public class MongoDBItemRepository implements ItemRepository {
 
     @Override
     public List<Item> findAll() {
-        return itemCollection.find(auth.forCurrentUser()).into(new ArrayList<>());
+        return itemCollection.find(auth.forCurrentUser()).hintString("user_id_1").into(new ArrayList<>());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class MongoDBItemRepository implements ItemRepository {
     @Override
     public List<Item> findByProjectID(Long projectId) {
         Bson filter = auth.forCurrentUser(eq("project_id", projectId));
-        return itemCollection.find(filter).into(new ArrayList<>());
+        return itemCollection.find(filter).hintString("project_id_1").into(new ArrayList<>());
     }
 
     private List<Long> getChildrenIds(Long id) {
