@@ -1,4 +1,5 @@
-FROM maven:latest as build-stage
+FROM maven:3.9.6-amazoncorretto-17-debian
+ as build-stage
 COPY . .
 RUN mvn clean package
 
